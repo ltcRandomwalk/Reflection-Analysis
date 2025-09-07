@@ -22,6 +22,7 @@
 
 package pascal.taie.analysis.pta.plugin.reflection;
 
+import pascal.taie.language.classes.JClass;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pascal.taie.World;
@@ -35,6 +36,8 @@ import pascal.taie.util.collection.MultiMap;
 
 import java.util.Comparator;
 import java.util.Set;
+
+import java.io.*;
 
 public class ReflectionAnalysis extends CompositePlugin {
 
@@ -92,6 +95,33 @@ public class ReflectionAnalysis extends CompositePlugin {
     public void onFinish() {
         super.onFinish();
         reportImpreciseCalls();
+        try {
+            reportAllTargets();
+        } catch (IOException e) {
+            throw new RuntimeException("Report all targets failed", e);
+        }
+    }
+
+    private void reportAllTargets() throws IOException {
+        File outDir = World.get().getOptions().getOutputDir(); // Tai-e 全局 output 目录。 [oai_citation:4‡tai-e.pascal-lab.net](https://tai-e.pascal-lab.net/docs/0.2.2/api/pascal/taie/config/Options.html?utm_source=chatgpt.com)
+        outDir.mkdirs();
+        File out = new File(outDir, "all-targets.txt");
+
+        try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(out)))) {
+            MultiMap<Invoke, Object> allTargets = collectAllTargets();
+            allTargets.forEach((invoke, targets) -> {
+                //JMethod container = invoke.getContainer().getName();
+                String containerClass = invoke.getContainer().getDeclaringClass().getName();
+                String containerName = invoke.getContainer().getName();
+                int linenumber = invoke.getLineNumber();
+                String methodClass = invoke.getMethodRef().getDeclaringClass().getName();
+                
+                String methodName = invoke.getMethodRef().getName();
+                methodClass = methodClass.substring(methodClass.lastIndexOf(".")+1);
+                //String MethodRef = invoke.getMethodRef().getName();
+                pw.println(methodClass+"."+methodName+";"+targets+";"+containerClass+"."+containerName+";"+linenumber+";");
+            });
+        }
     }
 
     /**

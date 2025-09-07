@@ -181,8 +181,11 @@ public class ReflectiveActionModel extends AnalysisModelPlugin {
     @InvokeHandler(signature = "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>", argIndexes = {BASE, 0})
     public void fieldGet(Context context, Invoke invoke,
                          PointsToSet fldObjs, PointsToSet baseObjs) {
+                            System.out.println("InvokeHandler: Field Get.");
         Var result = invoke.getResult();
+        System.out.println(invoke.getLineNumber());
         if (result == null) {
+            System.out.println("GetNull");
             return;
         }
         CSVar to = csManager.getCSVar(context, result);
